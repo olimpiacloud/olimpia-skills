@@ -18,8 +18,9 @@ Names are 3-63 characters: lowercase letters, digits and hyphens.
 Use the tools of the `olimpia` MCP server. If they are not available, ask the user to connect it and stop:
 
 - Claude Code: `claude mcp add --transport http olimpia https://api.olimpia.dev/mcp`, then `/mcp` to sign in.
+- On a remote machine (VPS over SSH, container, devcontainer): `claude mcp login olimpia --no-browser`. The user opens the printed URL on their own computer, approves, copies the connection code Olimpia shows and pastes it at the "paste the redirect URL" prompt.
 - Other clients: add the remote server `https://api.olimpia.dev/mcp`; the browser opens to authorize.
-- Without a browser (CI): see [references/api.md](references/api.md).
+- Without any interactive login (CI): see [references/api.md](references/api.md).
 
 | Intent | Tools |
 | --- | --- |

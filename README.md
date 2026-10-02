@@ -41,6 +41,8 @@ and add the MCP server to your client:
 | Cursor, VS Code, Windsurf | `{"mcpServers": {"olimpia": {"url": "https://api.olimpia.dev/mcp"}}}` |
 | claude.ai, ChatGPT | Add a custom connector with the URL `https://api.olimpia.dev/mcp` |
 
+**Remote machines** (a VPS over SSH, containers): run `claude mcp login olimpia --no-browser`, open the URL on your computer, authorize, and paste the connection code Olimpia shows back into the terminal.
+
 **CI and scripts**: create a personal token in Account → Agents & tokens and send it as `Authorization: Bearer`. See [skills/olimpia/references/api.md](skills/olimpia/references/api.md).
 
 ## Try it
