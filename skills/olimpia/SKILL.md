@@ -15,15 +15,21 @@ Names are 3-63 characters: lowercase letters, digits and hyphens.
 
 ## Tools
 
-Use the tools of the `olimpia` MCP server. If they are not available, ask the user to connect it and stop:
+Use the tools of the `olimpia` MCP server.
 
-- Claude Code: `claude mcp add --transport http olimpia https://api.olimpia.dev/mcp`, then `/mcp` to sign in.
+**Connecting (Olimpia plugin).** If a tool answers that the agent is not connected, call `login` without arguments, show the user the `url` it returns and ask them to open it (on any device), authorize, and paste the 8-character code they get. Then call `login` with `code`. The code expires in 10 minutes and only works for this agent. Never ask for passwords or tokens.
+
+If the tools are not available at all, ask the user to install or connect them and stop:
+
+- Claude Code plugin: `/plugin marketplace add olimpiacloud/olimpia-skills` and `/plugin install olimpia@olimpia`.
+- Claude Code without the plugin: `claude mcp add --transport http olimpia https://api.olimpia.dev/mcp`, then `/mcp` to sign in.
 - On a remote machine (VPS over SSH, container, devcontainer): `claude mcp login olimpia --no-browser`. The user opens the printed URL on their own computer, approves, copies the connection code Olimpia shows and pastes it at the "paste the redirect URL" prompt.
 - Other clients: add the remote server `https://api.olimpia.dev/mcp`; the browser opens to authorize.
 - Without any interactive login (CI): see [references/api.md](references/api.md).
 
 | Intent | Tools |
 | --- | --- |
+| Connect | `login` |
 | Discover | `list_projects`, `get_project`, `get_app`, `get_usage` |
 | Deploy | `create_app`, `get_upload_url`, `deploy`, `get_deployment`, `rollback`, `cancel_deployment` |
 | Configure | `update_app`, `get_env`, `set_env`, `create_project` |

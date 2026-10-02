@@ -24,7 +24,7 @@
 /plugin install olimpia@olimpia
 ```
 
-Then run `/mcp` and sign in to Olimpia.
+Then ask Claude to connect to Olimpia: it gives you a link, you authorize on olimpia.dev and paste the 8-character code back into the chat. It works the same on your laptop and on a remote machine (a VPS over SSH, a container), with no browser needed where the agent runs.
 
 **Any agent with skills support** (Claude Code, Codex, Cursor, OpenCode, Gemini CLI and others)
 
@@ -36,12 +36,10 @@ and add the MCP server to your client:
 
 | Client | Command or config |
 | --- | --- |
-| Claude Code | `claude mcp add --transport http olimpia https://api.olimpia.dev/mcp` |
+| Claude Code (without the plugin) | `claude mcp add --transport http olimpia https://api.olimpia.dev/mcp`; on a remote machine `claude mcp login olimpia --no-browser` |
 | Codex | `codex mcp add olimpia --url https://api.olimpia.dev/mcp` |
 | Cursor, VS Code, Windsurf | `{"mcpServers": {"olimpia": {"url": "https://api.olimpia.dev/mcp"}}}` |
 | claude.ai, ChatGPT | Add a custom connector with the URL `https://api.olimpia.dev/mcp` |
-
-**Remote machines** (a VPS over SSH, containers): run `claude mcp login olimpia --no-browser`, open the URL on your computer, authorize, and paste the connection code Olimpia shows back into the terminal.
 
 **CI and scripts**: create a personal token in Account → Agents & tokens and send it as `Authorization: Bearer`. See [skills/olimpia/references/api.md](skills/olimpia/references/api.md).
 
@@ -57,7 +55,8 @@ and add the MCP server to your client:
 
 ```
 .claude-plugin/        plugin and marketplace manifests
-.mcp.json              the remote Olimpia MCP server
+.mcp.json              the remote Olimpia MCP server, authenticated by scripts/headers.sh
+scripts/headers.sh     creates this agent's credential (never shown) and sends it to Olimpia
 skills/olimpia/
   SKILL.md             resource model, tools by intent, workflows and rules
   references/
