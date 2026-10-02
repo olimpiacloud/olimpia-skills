@@ -63,10 +63,9 @@ Both produce a `.tar.gz` whose files sit under one top-level folder, which the b
 
 ## Templates
 
-The catalog has the [Dokploy templates](https://github.com/Dokploy/templates) (500+) plus a few curated by Olimpia. `list_templates(search)` matches words against name, description and tags and returns up to 25 results; without `search` it lists only the deployable ones.
+The catalog only has templates that run as a single app on Olimpia: the [Dokploy templates](https://github.com/Dokploy/templates) that fit (one web container that keeps its data in Postgres, Redis or nowhere) plus a few curated by Olimpia. `list_templates(search?)` lists them, or the ones whose name, description or tags match every word. `postgres`/`redis` say which databases `deploy_template` creates; they replace the ones the original compose file had, with the connection already in the env vars.
 
-- `available=true`: Olimpia converted it to a single app. `postgres`/`redis` say which databases `deploy_template` creates; they replace the ones the original compose file had, with the connection already in the env vars.
-- `available=false` comes with a `reason`: `volumes` (needs a persistent disk), `services` (several containers or several exposed ports), `command` (custom container command), `files` (mounted config files), `extension` (pgvector, PostGIS, TimescaleDB), others (`config`, `redis`, `wiring`, `build`, `unsupported`). Tell the user it is not available yet; if they still want it, `create_app(source="image")` works only when the image keeps its state in Postgres, Redis or a bucket and runs with its default command.
+If a tool is not in the catalog, it usually needs a persistent disk, several containers, a custom command or mounted config files, which Olimpia apps do not support yet. Tell the user; `create_app(source="image")` only works when the image keeps its state in Postgres, Redis or a bucket and runs with its default command.
 
 `deploy_template(template, name?, project?)`: `name` defaults to the template id and is also the subdomain and the name of its databases. Secrets are generated once per app (hex, base64, lowercase passwords or UUIDs, as the template expects). Read them with `get_env(app, reveal=true)` only when the user needs one, and never paste them in full in the chat. Initial admin users usually come from env vars such as `ADMIN_EMAIL`/`ADMIN_PASSWORD`; generated emails are `admin@example.com`.
 
@@ -82,4 +81,4 @@ Curated templates:
 | `metabase` | `metabase/metabase:latest` | 3000 | yes | The first boot runs migrations and takes a few minutes; `get_logs` shows progress. Then the setup wizard creates the admin. To query an Olimpia database from Metabase, use its internal host from `get_connection`. |
 
 - Values are rendered once, when the app is created. If the subdomain changes later (`update_app`) or a custom domain becomes the main URL, update the variables that contain the old URL (`get_env` shows them) with `set_env(..., redeploy=true)`.
-- `name_taken` means an app, or a database the template needs, already has that name in the project: pass another `name`. `template_unavailable` means `available=false`.
+- `name_taken` means an app, or a database the template needs, already has that name in the project: pass another `name`.
