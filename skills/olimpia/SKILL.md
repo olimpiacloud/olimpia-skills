@@ -61,7 +61,7 @@ To ship new code later: `get_upload_url` → upload → `deploy(source_key)`. `d
 - **GitHub repo:** `create_app(source="github", repo="owner/name", branch?)`. If it fails with `invalid_repo`, the Olimpia GitHub App is not installed on that repo: ask the user to add it from the dashboard (Apps → New app) or deploy with `source=upload`.
 - **Docker image:** `create_app(source="image", image="ghcr.io/owner/app:tag", port)`.
 - **Database:** `create_resource(kind="postgres", name, connect_to_app=app)` injects `DATABASE_URL`; then `deploy(app)`. Same with `kind="redis"` (`REDIS_URL`) and `kind="bucket"` (`AWS_*`, `BUCKET_NAME`). Migrations, ORMs and SQL: [references/data.md](references/data.md).
-- **Env vars:** `set_env(app, set={...}, remove=[...], redeploy=true)`. Values are encrypted; `get_env` hides them unless `reveal=true`.
+- **Env vars:** `set_env(app, set={...}, remove=[...], redeploy=true)`. Values are encrypted; `get_env` hides the ones that look secret unless `reveal=true`.
 - **Custom domain:** `add_domain(app, domain)` returns DNS records for the user to create; `check_domain` until `active`. Root domains need CNAME flattening/ALIAS (Cloudflare supports it); otherwise use `www`.
 - **Rollback:** `get_app` lists recent deployments; `rollback(app, deployment)` reuses that image without rebuilding.
 
