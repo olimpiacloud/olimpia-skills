@@ -3,6 +3,7 @@
 ## Contents
 - Connecting apps
 - Postgres: ORMs, migrations and SQL
+- Postgres backups
 - Redis
 - Buckets
 - Public access from outside Olimpia
@@ -26,7 +27,20 @@ These are internal URLs on Olimpia's private network: no TLS parameters needed, 
 - Drizzle, Knex, TypeORM, SQLAlchemy, Django, Ecto, sqlx: read `DATABASE_URL`; run migrations on start or as a release step in the start command.
 - Inspect with `list_tables` and `query_postgres(database, sql)`: read mode accepts one SELECT/WITH/VALUES query and returns up to 200 rows as JSON.
 - `query_postgres(..., write=true)` runs any statements separated by `;` in one transaction with a 30 s timeout, as the `app` role. Use it for quick fixes or seeding; prefer the app's migrations for schema changes. Ask the user before destructive statements.
-- Olimpia keeps its own daily backups. To also get dumps in the user's own S3, the user configures it in the dashboard (Postgres → Backups).
+
+## Postgres backups
+
+Olimpia keeps its own daily backups. On top of that, `set_backups` schedules dumps (`.sql.gz`) of a database into a bucket the user controls:
+
+- **Olimpia bucket:** `set_backups(database, bucket="backups")`. Use an existing bucket of the same project, or create one with `create_resource(kind="bucket")` if the user agrees.
+- **External S3** (AWS S3, Cloudflare R2, Backblaze B2, MinIO): `set_backups(database, endpoint="https://<account>.r2.cloudflarestorage.com", s3_bucket, access_key_id, secret_access_key, region?)`. Region defaults to `auto`. The key needs list, read and write on that bucket. Ask the user for the credentials; never invent them.
+- `schedule` is a 5-field cron in UTC with a fixed minute, at most hourly (default `0 3 * * *`, daily at 03:00 UTC). `keep` is how many backups to keep, 1-90 (default 7); older ones are deleted.
+- Olimpia lists the bucket before saving; `backup_unreachable` means wrong endpoint, region, bucket or key permissions.
+- Once configured, omitted fields keep their values: `set_backups(database, schedule="0 */6 * * *")` only changes the schedule.
+- `run_backup(database)` makes one now: run it after configuring to verify, and before risky migrations. `get_backups` shows the configuration and the latest files.
+- `disable_backups(database, confirm=<name>)` stops the schedule; files already in the bucket stay. Ask first.
+
+To restore, the user downloads a file from the dashboard (Postgres → Backups) or from the bucket. Then, with the target database public (`set_public_access`, ask first, turn it off afterwards): `gunzip -c backup.sql.gz | psql "<public_url>"` with `sslmode=require`.
 
 ## Redis
 

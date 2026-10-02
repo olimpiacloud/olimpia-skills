@@ -61,7 +61,7 @@ skills/olimpia/
   SKILL.md             resource model, tools by intent, workflows and rules
   references/
     deploy.md          preparing apps per stack, monorepos, Dockerfiles, uploads
-    data.md            Postgres, Redis and buckets: connecting, ORMs, SQL, public access
+    data.md            Postgres, Redis and buckets: connecting, ORMs, SQL, backups, public access
     troubleshooting.md failed deployments and apps that don't respond
     api.md             personal tokens, REST API, GitHub Actions
 ```
