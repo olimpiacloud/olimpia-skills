@@ -12,7 +12,7 @@
 
 [Olimpia](https://olimpia.dev) is a cloud platform from Buenos Aires: app hosting, managed Postgres and Redis, and S3-compatible buckets, grouped in projects. This repository gives your agent two things:
 
-- **The Olimpia MCP server** (`https://api.olimpia.dev/mcp`): tools to create apps, upload and deploy code, set env vars, create and connect databases, run SQL, add domains and read logs. It signs in with OAuth the first time.
+- **The Olimpia MCP server** (`https://api.olimpia.dev/mcp`): tools to create apps, upload and deploy code, deploy ready-made templates (n8n, Centrifugo, Umami, Metabase), set env vars, create and connect databases, run SQL, add domains and read logs. It signs in with OAuth the first time.
 - **The `olimpia` skill**: the workflows and the details agents get wrong otherwise, like binding to `$PORT`, uploading a folder, connecting a database and fixing failed builds.
 
 ## Install
@@ -51,6 +51,8 @@ and add the MCP server to your client:
 
 > Point app.mycompany.com to the `web` app.
 
+> Set up n8n on Olimpia.
+
 ## What's inside
 
 ```
@@ -60,7 +62,7 @@ scripts/headers.sh     creates this agent's credential (never shown) and sends i
 skills/olimpia/
   SKILL.md             resource model, tools by intent, workflows and rules
   references/
-    deploy.md          preparing apps per stack, monorepos, Dockerfiles, uploads
+    deploy.md          preparing apps per stack, monorepos, Dockerfiles, uploads, templates
     data.md            Postgres, Redis and buckets: connecting, ORMs, SQL, backups, public access
     troubleshooting.md failed deployments and apps that don't respond
     api.md             personal tokens, REST API, GitHub Actions

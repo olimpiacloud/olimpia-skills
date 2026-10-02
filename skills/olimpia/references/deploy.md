@@ -7,6 +7,7 @@
 - Dockerfile builds
 - Build-time and runtime variables
 - Upload commands
+- Templates
 
 ## How builds work
 
@@ -59,3 +60,18 @@ Frameworks that inline variables at build time (`NEXT_PUBLIC_*`, `VITE_*`) need 
 - `command_tar`: packs the current folder excluding `node_modules`, `.git`, `.env*`, `.next`, `dist`, `build`, `target`, `.venv` and `__pycache__`.
 
 Both produce a `.tar.gz` whose files sit under one top-level folder, which the builder requires. Run them from the folder you want to deploy (the repo root for monorepos). The limit is 300 MB. On Windows without a POSIX shell, use Git Bash or WSL.
+
+## Templates
+
+`deploy_template(template, name?, project?)` deploys a public image already configured for Olimpia. `name` defaults to the template id and is also the subdomain; when the template needs Postgres, a database with the same name is created in the project and its internal connection goes into the env vars. Secrets are random 64-character hex values, one per variable. Read them with `get_env(app, reveal=true)` only when the user needs one, and never paste them in full in the chat.
+
+| Template | Image | Port | Postgres | After deploying |
+| --- | --- | --- | --- | --- |
+| `n8n` | `n8nio/n8n:stable` | 5678 | yes | Open the URL and create the owner account. Webhooks use `N8N_WEBHOOK_URL`; binary data is stored in Postgres. Keep `N8N_ENCRYPTION_KEY`: losing it makes saved credentials unreadable. |
+| `centrifugo` | `centrifugo/centrifugo:v6` | 8000 | no | Admin panel at the URL with `CENTRIFUGO_ADMIN_PASSWORD`. Backends publish with `CENTRIFUGO_HTTP_API_KEY` (`X-API-Key` header on `/api/*`); clients connect to `wss://<host>/connection/websocket` with a JWT signed with `CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY`. `CENTRIFUGO_CLIENT_ALLOWED_ORIGINS` is `*`; suggest restricting it to the user's frontend origin (space-separated list). |
+| `umami` | `ghcr.io/umami-software/umami:3` | 3000 | yes | First login `admin` / `umami`: ask the user to change the password right away. |
+| `metabase` | `metabase/metabase:latest` | 3000 | yes | The first boot runs migrations and takes a few minutes; `get_logs` shows progress. Then the setup wizard creates the admin. To query an Olimpia database from Metabase, use its internal host from `get_connection`. |
+
+- Values are rendered once, when the app is created. If the subdomain changes later (`update_app`) or a custom domain becomes the main URL, update the URL variables (`N8N_WEBHOOK_URL`, `N8N_EDITOR_BASE_URL`, `N8N_HOST`, `MB_SITE_URL`) with `set_env(..., redeploy=true)`.
+- Apps have no persistent disk, so templates only include tools that keep their state in Postgres or need none. For anything else use `create_app(source="image")` and keep its data in Postgres, Redis or a bucket.
+- `name_taken` means an app (or, for templates with Postgres, a database) with that name already exists in the project: pass another `name`.
