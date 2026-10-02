@@ -63,7 +63,16 @@ Both produce a `.tar.gz` whose files sit under one top-level folder, which the b
 
 ## Templates
 
-`deploy_template(template, name?, project?)` deploys a public image already configured for Olimpia. `name` defaults to the template id and is also the subdomain; when the template needs Postgres, a database with the same name is created in the project and its internal connection goes into the env vars. Secrets are random 64-character hex values, one per variable. Read them with `get_env(app, reveal=true)` only when the user needs one, and never paste them in full in the chat.
+The catalog has the [Dokploy templates](https://github.com/Dokploy/templates) (500+) plus a few curated by Olimpia. `list_templates(search)` matches words against name, description and tags and returns up to 25 results; without `search` it lists only the deployable ones.
+
+- `available=true`: Olimpia converted it to a single app. `postgres`/`redis` say which databases `deploy_template` creates; they replace the ones the original compose file had, with the connection already in the env vars.
+- `available=false` comes with a `reason`: `volumes` (needs a persistent disk), `services` (several containers or several exposed ports), `command` (custom container command), `files` (mounted config files), `extension` (pgvector, PostGIS, TimescaleDB), others (`config`, `redis`, `wiring`, `build`, `unsupported`). Tell the user it is not available yet; if they still want it, `create_app(source="image")` works only when the image keeps its state in Postgres, Redis or a bucket and runs with its default command.
+
+`deploy_template(template, name?, project?)`: `name` defaults to the template id and is also the subdomain and the name of its databases. Secrets are generated once per app (hex, base64, lowercase passwords or UUIDs, as the template expects). Read them with `get_env(app, reveal=true)` only when the user needs one, and never paste them in full in the chat. Initial admin users usually come from env vars such as `ADMIN_EMAIL`/`ADMIN_PASSWORD`; generated emails are `admin@example.com`.
+
+After deploying, follow `get_deployment` until `active`, then `curl` the URL and read `get_logs`: some tools run migrations on the first boot and take a few minutes.
+
+Curated templates:
 
 | Template | Image | Port | Postgres | After deploying |
 | --- | --- | --- | --- | --- |
@@ -72,6 +81,5 @@ Both produce a `.tar.gz` whose files sit under one top-level folder, which the b
 | `umami` | `ghcr.io/umami-software/umami:3` | 3000 | yes | First login `admin` / `umami`: ask the user to change the password right away. |
 | `metabase` | `metabase/metabase:latest` | 3000 | yes | The first boot runs migrations and takes a few minutes; `get_logs` shows progress. Then the setup wizard creates the admin. To query an Olimpia database from Metabase, use its internal host from `get_connection`. |
 
-- Values are rendered once, when the app is created. If the subdomain changes later (`update_app`) or a custom domain becomes the main URL, update the URL variables (`N8N_WEBHOOK_URL`, `N8N_EDITOR_BASE_URL`, `N8N_HOST`, `MB_SITE_URL`) with `set_env(..., redeploy=true)`.
-- Apps have no persistent disk, so templates only include tools that keep their state in Postgres or need none. For anything else use `create_app(source="image")` and keep its data in Postgres, Redis or a bucket.
-- `name_taken` means an app (or, for templates with Postgres, a database) with that name already exists in the project: pass another `name`.
+- Values are rendered once, when the app is created. If the subdomain changes later (`update_app`) or a custom domain becomes the main URL, update the variables that contain the old URL (`get_env` shows them) with `set_env(..., redeploy=true)`.
+- `name_taken` means an app, or a database the template needs, already has that name in the project: pass another `name`. `template_unavailable` means `available=false`.
