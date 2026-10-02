@@ -1,0 +1,15 @@
+{
+  "name": "olimpia",
+  "description": "Olimpia's official plugin for coding agents.",
+  "owner": {
+    "name": "Olimpia",
+    "email": "hola@olimpia.dev"
+  },
+  "plugins": [
+    {
+      "name": "olimpia",
+      "source": "./",
+      "description": "Deploy and operate apps, Postgres, Redis and buckets on Olimpia: MCP server and skill."
+    }
+  ]
+}

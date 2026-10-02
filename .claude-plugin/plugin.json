@@ -1,0 +1,14 @@
+{
+  "name": "olimpia",
+  "version": "0.1.0",
+  "description": "Deploy and operate apps, Postgres, Redis and buckets on Olimpia from your agent: the Olimpia MCP server plus a skill that knows the workflows.",
+  "author": {
+    "name": "Olimpia",
+    "email": "hola@olimpia.dev",
+    "url": "https://olimpia.dev"
+  },
+  "homepage": "https://olimpia.dev",
+  "repository": "https://github.com/Rehelios/olimpia-skills",
+  "license": "MIT",
+  "keywords": ["olimpia", "deploy", "hosting", "postgres", "redis", "s3", "mcp"]
+}

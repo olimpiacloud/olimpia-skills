@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "olimpia": {
+      "type": "http",
+      "url": "https://api.olimpia.dev/mcp"
+    }
+  }
+}
