@@ -20,7 +20,7 @@
 **Claude Code** (plugin: skill and MCP server together)
 
 ```
-/plugin marketplace add Rehelios/olimpia-skills
+/plugin marketplace add olimpiacloud/olimpia-skills
 /plugin install olimpia@olimpia
 ```
 
@@ -29,7 +29,7 @@ Then run `/mcp` and sign in to Olimpia.
 **Any agent with skills support** (Claude Code, Codex, Cursor, OpenCode, Gemini CLI and others)
 
 ```bash
-bunx skills add Rehelios/olimpia-skills
+bunx skills add olimpiacloud/olimpia-skills
 ```
 
 and add the MCP server to your client:

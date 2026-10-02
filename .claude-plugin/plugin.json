@@ -8,7 +8,7 @@
     "url": "https://olimpia.dev"
   },
   "homepage": "https://olimpia.dev",
-  "repository": "https://github.com/Rehelios/olimpia-skills",
+  "repository": "https://github.com/olimpiacloud/olimpia-skills",
   "license": "MIT",
   "keywords": ["olimpia", "deploy", "hosting", "postgres", "redis", "s3", "mcp"]
 }
