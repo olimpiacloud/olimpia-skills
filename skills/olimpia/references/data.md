@@ -14,15 +14,18 @@
 
 | Kind | Variables |
 | --- | --- |
-| postgres | `DATABASE_URL` (change it with `env_key`) |
+| postgres | `DATABASE_URL` (force another name with `env_key`; it replaces a variable with that name) |
 | redis | `REDIS_URL` |
 | bucket | `AWS_ENDPOINT_URL_S3`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `BUCKET_NAME` |
+
+When the app already has a variable with a default name, the new ones get the resource name as suffix (`DATABASE_URL_MAIN`); `env_keys` in the reply lists the names used, so point the code at them. Rotating a password or bucket keys updates the apps that use it; they need a deploy to pick it up.
 
 These are internal URLs on Olimpia's private network: no TLS parameters needed, and they do not work from the user's machine. One app can use several resources; a resource can be shared by several apps.
 
 ## Postgres
 
-- Version 18. User `app` owns the database `app` (not a superuser: no `CREATE EXTENSION` for untrusted extensions, no `ALTER SYSTEM`). Common trusted extensions such as `pgcrypto`, `citext` and `pg_trgm` work.
+- Version 18. User `app` owns the database `app` (not a superuser: no `CREATE EXTENSION` for untrusted extensions, no `ALTER SYSTEM`). Common trusted extensions such as `pgcrypto`, `citext`, `pg_trgm` and `unaccent` work.
+- pgvector: `create_resource(kind="postgres", name, vector=true)` creates it from `pgvector/pgvector:pg18`, so `CREATE EXTENSION vector` works (embeddings, similarity search). The default image (`postgres:18-alpine`) does not have it, and the image cannot change later: if the app needs vectors, pass `vector=true` from the start; for an existing database without it, create a new one and move the data. `get_project` shows each database's `image`.
 - Prisma: `DATABASE_URL` works as is. Run migrations at start (`"start": "prisma migrate deploy && node server.js"`): the build runs on separate machines and cannot reach the database.
 - Drizzle, Knex, TypeORM, SQLAlchemy, Django, Ecto, sqlx: read `DATABASE_URL`; run migrations on start or as a release step in the start command.
 - Inspect with `list_tables` and `query_postgres(database, sql)`: read mode accepts one SELECT/WITH/VALUES query and returns up to 200 rows as JSON.
