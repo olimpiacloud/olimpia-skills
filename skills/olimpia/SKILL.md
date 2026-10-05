@@ -45,7 +45,7 @@ When the account has several projects and the user did not say which, call `list
 
 Environments: `project="shop"` is production; `project="shop.staging"` targets the staging environment in any tool. Work in production unless the user names another environment. `create_environment(name, project?, copy?)` creates one (up to 5 per project, `environment_limit` otherwise) and by default copies every app, database and bucket of the given environment: same app sources and settings with a first deploy and their own subdomains (`web-staging.olimpia.cc`), **empty** databases and buckets with new credentials, and env vars rewritten to point to the copies. Data, custom domains and backups are not copied; GitHub apps keep the same branch, so suggest `update_app(branch=...)` if staging should follow another one. Follow the first deploys with `get_project(project="shop.staging")`.
 
-Regions are automatic: every project runs in one (today only `olimpia-bue1`, Buenos Aires) with its apps and databases together. Omit `region` on `create_project`, `create_app` and `deploy_template` unless the user asks for a specific one; it can only change while the project has no apps or databases (`region_locked` otherwise: create a new project with that region).
+Servers are automatic: every project runs on one (today `olimpia-bue1`, Buenos Aires) with its apps and databases together. Omit `server` on `create_project`, `create_app` and `deploy_template` unless the user asks for a specific one; it can only change while the project has no apps or databases (`server_locked` otherwise: create a new project on that server).
 
 ## Deploy a local folder
 
