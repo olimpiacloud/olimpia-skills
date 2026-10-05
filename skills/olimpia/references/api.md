@@ -26,8 +26,9 @@ Base URL `https://api.olimpia.dev`, header `Authorization: Bearer $OLIMPIA_TOKEN
 
 | Action | Request |
 | --- | --- |
-| Projects | `GET /projects` |
-| Apps of a project | `GET /apps?project=<project_id>` |
+| Projects | `GET /projects` (one row per environment: `slug` is `shop` for production or `shop.staging`, `parent_id` points to production) |
+| New environment | `POST /projects/<project_id>/environments` with `{"name": "staging", "copy": true}` (copies from `<project_id>`) |
+| Apps of a project | `GET /apps?project=<project_id>` (the id of the environment) |
 | App detail | `GET /apps/<app_id>` |
 | Upload URL | `POST /apps/<app_id>/source` → `{key, upload_url}` |
 | Deploy | `POST /apps/<app_id>/deployments` with `{"source": "<key>", "message": "..."}` (`{}` rebuilds) |
