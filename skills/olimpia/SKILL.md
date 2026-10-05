@@ -42,6 +42,8 @@ If the tools are not available at all, ask the user to install or connect them a
 
 When the account has several projects and the user did not say which, call `list_projects` and ask.
 
+Regions are automatic: every project runs in one (today only `olimpia-bue1`, Buenos Aires) with its apps and databases together. Omit `region` on `create_project`, `create_app` and `deploy_template` unless the user asks for a specific one; it can only change while the project has no apps or databases (`region_locked` otherwise: create a new project with that region).
+
 ## Deploy a local folder
 
 Copy this checklist and follow it:

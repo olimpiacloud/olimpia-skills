@@ -67,7 +67,7 @@ The catalog only has templates that run as a single app on Olimpia: the [Dokploy
 
 If a tool is not in the catalog, it usually needs a persistent disk, several containers, a custom command or mounted config files, which Olimpia apps do not support yet. Tell the user; `create_app(source="image")` only works when the image keeps its state in Postgres, Redis or a bucket and runs with its default command.
 
-`deploy_template(template, name?, project?)`: `name` defaults to the template id and is also the subdomain and the name of its databases. Secrets are generated once per app (hex, base64, lowercase passwords or UUIDs, as the template expects). Read them with `get_env(app, reveal=true)` only when the user needs one, and never paste them in full in the chat. Initial admin users usually come from env vars such as `ADMIN_EMAIL`/`ADMIN_PASSWORD`; generated emails are `admin@example.com`.
+`deploy_template(template, name?, project?, region?)`: `name` defaults to the template id and is also the subdomain and the name of its databases. Secrets are generated once per app (hex, base64, lowercase passwords or UUIDs, as the template expects). Read them with `get_env(app, reveal=true)` only when the user needs one, and never paste them in full in the chat. Initial admin users usually come from env vars such as `ADMIN_EMAIL`/`ADMIN_PASSWORD`; generated emails are `admin@example.com`.
 
 After deploying, follow `get_deployment` until `active`, then `curl` the URL and read `get_logs`: some tools run migrations on the first boot and take a few minutes.
 
