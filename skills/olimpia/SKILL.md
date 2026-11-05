@@ -39,7 +39,7 @@ If the tools are not available at all, ask the user to install or connect them a
 | Data | `create_resource`, `connect_resource`, `get_connection`, `set_public_access`, `list_tables`, `query_postgres` |
 | Backups | `get_backups`, `set_backups`, `run_backup`, `disable_backups` |
 | Domains | `add_domain`, `check_domain`, `remove_domain` |
-| Observe | `get_logs`, `get_deployment` |
+| Observe | `get_logs`, `get_deployment`, `get_analytics` (visits, top pages, referrers, Core Web Vitals; measured automatically) |
 | Delete | `delete_app`, `delete_resource`, `delete_environment` (need `confirm` = exact name) |
 
 When the account has several projects and the user did not say which, call `list_projects` and ask.
