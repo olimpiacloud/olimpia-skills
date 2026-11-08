@@ -40,6 +40,7 @@ If the tools are not available at all, ask the user to install or connect them a
 | Backups | `get_backups`, `set_backups`, `run_backup`, `disable_backups` |
 | Domains | `add_domain`, `check_domain`, `remove_domain` |
 | Observe | `get_logs`, `get_deployment`, `get_analytics` (visits, top pages, referrers, Core Web Vitals; measured automatically) |
+| Cost | `estimate_cost` (approximate monthly cost from expected memory, CPU, Postgres disk, bucket GB and emails, and what the Hobby and Pro plans would charge) |
 | Delete | `delete_app`, `delete_resource`, `delete_environment` (need `confirm` = exact name) |
 
 When the account has several projects and the user did not say which, call `list_projects` and ask.
