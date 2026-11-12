@@ -5,6 +5,7 @@
 - Per stack
 - Monorepos
 - Dockerfile builds
+- Builders
 - Build-time and runtime variables
 - Upload commands
 - Templates
@@ -18,7 +19,9 @@ The process must:
 - listen on `0.0.0.0` and the port in `$PORT` (default 3000, change it with `port` on `create_app`/`update_app` or `set_env PORT=...`);
 - keep running in the foreground;
 - write logs to stdout/stderr (they show up in `get_logs`);
-- not rely on local disk for data: the filesystem is reset on every deploy. Use Postgres, Redis or a bucket.
+- not rely on local disk for data: the filesystem is reset on every deploy, and an app that writes more than 5 GiB to it is restarted with a clean one. Use Postgres, Redis or a bucket.
+
+Each app is one container with up to 4 GiB of memory (no swap), 4 CPUs and 2,048 processes and threads, restarted automatically when it exits. Size worker counts and heaps for that: a process that goes over the memory is killed. A deploy starts the new version, waits until it stays up and only then stops the old one, so both run for a moment; if the new one crashes, the deploy fails with `release_failed` and the old one keeps serving.
 
 ## Per stack
 
@@ -46,9 +49,18 @@ Upload (or connect) the whole repository and set `root_dir` to the app folder, f
 
 Set `dockerfile` to its path relative to `root_dir` (for example `Dockerfile` or `docker/Dockerfile.prod`). The image must `EXPOSE`/listen on `$PORT`. Multi-stage builds are fine.
 
+## Builders
+
+`builder` on `create_app` and `update_app` picks who builds the image:
+
+- `default`: the Dockerfile when `dockerfile` is set, otherwise Railpack.
+- `acropolis`: Acropolis, Olimpia's own builder, detects the stack and **ignores the Dockerfile**. Builds are usually several times faster and images smaller; if it cannot build the app, the same build falls back to the default builder. Pushes to GitHub only redeploy the app when they touch files its image depends on.
+
+Leave the default unless the user asks for faster builds, and not for apps whose Dockerfile does things detection cannot see (system packages, a custom entrypoint, migrations at start). `update_app(watch_paths=[...])` (paths from the repository root) limits which pushes redeploy an app with any builder; an empty list goes back to every push.
+
 ## Build-time and runtime variables
 
-All app env vars are available both at build time and at runtime. The build runs on separate build machines, so it cannot reach Olimpia databases: run migrations and anything that needs the database when the app starts. Changes apply on the next deploy: `set_env(..., redeploy=true)` or `deploy(app)` without `source_key`.
+All app env vars are available both at build time and at runtime. The build runs on separate build machines, so it cannot reach Olimpia databases: run migrations and anything that needs the database when the app starts. Changes apply on the next deploy: `set_env(..., redeploy=true)` or `deploy(app)` without `source_key`. An app takes up to 200 variables of up to 32 KB each; names use letters, digits and underscores.
 
 Frameworks that inline variables at build time (`NEXT_PUBLIC_*`, `VITE_*`) need a new build after changing them.
 
@@ -63,7 +75,7 @@ Both produce a `.tar.gz` whose files sit under one top-level folder, which the b
 
 ## Templates
 
-The catalog only has templates that run as a single app on Olimpia: the [Dokploy templates](https://github.com/Dokploy/templates) that fit (one web container that keeps its data in Postgres, Redis or nowhere) plus a few curated by Olimpia. `list_templates(search?)` lists them, or the ones whose name, description or tags match every word. `postgres`/`redis` say which databases `deploy_template` creates; they replace the ones the original compose file had, with the connection already in the env vars.
+The catalog only has templates that run as a single app on Olimpia: open-source tools with one web container that keeps its data in Postgres, Redis or nowhere, plus a few curated by Olimpia. `list_templates(search?)` lists them, or the ones whose name, description or tags match every word. `postgres`/`redis` say which databases `deploy_template` creates; they replace the ones the original compose file had, with the connection already in the env vars.
 
 If a tool is not in the catalog, it usually needs a persistent disk, several containers, a custom command or mounted config files, which Olimpia apps do not support yet. Tell the user; `create_app(source="image")` only works when the image keeps its state in Postgres, Redis or a bucket and runs with its default command.
 

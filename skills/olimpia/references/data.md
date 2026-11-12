@@ -11,12 +11,12 @@
 
 ## Connecting apps
 
-`connect_resource(app, kind, name)` (or `create_resource(..., connect_to_app=app)`) writes the variables into the app and redeploys:
+`connect_resource(app, kind, name)` writes the variables into the app and redeploys it (`redeploy=false` skips that). `create_resource(..., connect_to_app=app)` writes them without deploying: call `deploy(app)` afterwards.
 
 | Kind | Variables |
 | --- | --- |
 | postgres | `DATABASE_URL` (force another name with `env_key`; it replaces a variable with that name) |
-| redis | `REDIS_URL` |
+| redis | `REDIS_URL` (`env_key` works the same) |
 | bucket | `AWS_ENDPOINT_URL_S3`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `BUCKET_NAME` |
 | email | `EMAIL_API_KEY`, `EMAIL_API_URL`, `EMAIL_DOMAIN` |
 
@@ -26,23 +26,24 @@ These are internal URLs on Olimpia's private network: no TLS parameters needed, 
 
 ## Postgres
 
-- Version 18. User `app` owns the database `app` (not a superuser: no `CREATE EXTENSION` for untrusted extensions, no `ALTER SYSTEM`). Common trusted extensions such as `pgcrypto`, `citext`, `pg_trgm` and `unaccent` work.
+- Version 18. User `app` owns the database `app` (not a superuser: no `CREATE EXTENSION` for untrusted extensions, no `ALTER SYSTEM`). The trusted contrib extensions work: `pgcrypto`, `citext`, `pg_trgm`, `unaccent`, `hstore`, `uuid-ossp`.
+- Limits: 8 GiB of memory, 4 CPUs and 20 connections for `app`. During a deploy the old and the new version of an app are connected at the same time, so keep each app's pool at 10 or less, and lower when several apps share the database (`too many connections for role "app"` otherwise).
 - pgvector: `create_resource(kind="postgres", name, vector=true)` creates it from `pgvector/pgvector:pg18`, so `CREATE EXTENSION vector` works (embeddings, similarity search). The default image (`postgres:18-alpine`) does not have it, and the image cannot change later: if the app needs vectors, pass `vector=true` from the start; for an existing database without it, create a new one and move the data. `get_project` shows each database's `image`.
 - Prisma: `DATABASE_URL` works as is. Run migrations at start (`"start": "prisma migrate deploy && node server.js"`): the build runs on separate machines and cannot reach the database.
 - Drizzle, Knex, TypeORM, SQLAlchemy, Django, Ecto, sqlx: read `DATABASE_URL`; run migrations on start or as a release step in the start command.
-- Inspect with `list_tables` and `query_postgres(database, sql)`: read mode accepts one SELECT/WITH/VALUES query (or EXPLAIN) and returns up to 200 rows or 256 KB as JSON (`truncated: true` when cut).
-- `query_postgres(..., write=true, confirm="<database name>")` runs any statements separated by `;` in one transaction with a 30 s timeout, as the `app` role. Use it for quick fixes or seeding; prefer the app's migrations for schema changes. Ask the user before every write and pass `confirm` only after they approve it.
+- Inspect with `list_tables` and `query_postgres(database, sql)`: read mode accepts one SELECT/WITH/VALUES query (or EXPLAIN) of up to 100 KB, with an 8 s timeout, and returns up to 200 rows or 256 KB as JSON (`truncated: true` when cut).
+- `query_postgres(..., write=true, confirm="<database name>")` runs any statements separated by `;` in one transaction with a 30 s timeout, as the `app` role, and returns only `rows_affected` of the last one. Use it for quick fixes or seeding; prefer the app's migrations for schema changes. Ask the user before every write and pass `confirm` only after they approve it.
 
 ## Postgres backups
 
-Olimpia keeps its own daily backups. On top of that, `set_backups` schedules dumps (`.sql.gz`) of a database into a bucket the user controls:
+A database has no backups until they are configured: suggest it for any database whose data matters. `set_backups` schedules dumps (`.sql.gz`) of a database into a bucket the user controls:
 
 - **Olimpia bucket:** `set_backups(database, bucket="backups")`. Use an existing bucket of the same project, or create one with `create_resource(kind="bucket")` if the user agrees.
-- **External S3** (AWS S3, Cloudflare R2, Backblaze B2, MinIO): `set_backups(database, endpoint="https://<account>.r2.cloudflarestorage.com", s3_bucket, access_key_id, secret_access_key, region?)`. Region defaults to `auto`. The key needs list, read and write on that bucket. Ask the user for the credentials; never invent them.
-- `schedule` is a 5-field cron in UTC with a fixed minute, at most hourly (default `0 3 * * *`, daily at 03:00 UTC). `keep` is how many backups to keep, 1-90 (default 7); older ones are deleted.
+- **External S3** (AWS S3, Backblaze B2, MinIO or any S3-compatible service): `set_backups(database, endpoint="https://s3.us-east-1.amazonaws.com", s3_bucket, access_key_id, secret_access_key, region?, confirm="<database name>")`. The endpoint is a public https URL without path; region defaults to `auto`. The key needs list, read and write on that bucket. Ask the user for the credentials, never invent them, and pass `confirm` only after they approved sending the backups there.
+- `schedule` is a 5-field cron in UTC with a fixed minute, at most hourly (default `0 3 * * *`, daily at 03:00 UTC). `keep` is how many backups to keep, 1-90 (default 7); older ones are deleted. Files go to `<database host>/<folder>/` in the bucket (`folder` defaults to `backups`).
 - Olimpia lists the bucket before saving; `backup_unreachable` means wrong endpoint, region, bucket or key permissions.
 - Once configured, omitted fields keep their values: `set_backups(database, schedule="0 */6 * * *")` only changes the schedule.
-- `run_backup(database)` makes one now: run it after configuring to verify, and before risky migrations. `get_backups` shows the configuration and the latest files.
+- `run_backup(database)` makes one now, at most once every 10 minutes per database: run it after configuring to verify, and before risky migrations. `get_backups` shows the configuration and the latest files.
 - `disable_backups(database, confirm=<name>)` stops the schedule; files already in the bucket stay. Ask first.
 
 To restore, the user downloads a file from the dashboard (Postgres → Backups) or from the bucket. Then, with the target database public (`set_public_access`, ask first, turn it off afterwards): `gunzip -c backup.sql.gz | psql "<public_url>"` with `sslmode=require`.
@@ -50,12 +51,13 @@ To restore, the user downloads a file from the dashboard (Postgres → Backups) 
 ## Redis
 
 - Version 8, persisted to disk (AOF), no eviction: keys are never dropped, which suits queues (BullMQ, Sidekiq, Celery).
-- User `default`; admin commands (`CONFIG`, `ACL`, `SHUTDOWN`) are disabled.
+- Limits: 2 GiB of memory, 2 CPUs and 1 GB of data (`maxmemory`). Past 1 GB, writes fail with `OOM command not allowed when used memory > 'maxmemory'` while reads keep working: delete keys or set TTLs, since nothing is evicted. For a cache, set a TTL on every key.
+- User `default`; admin commands (`CONFIG`, `ACL`, `SHUTDOWN`) and `MIGRATE` are disabled.
 - Use `REDIS_URL` as is (`redis://default:...@host:6379`).
 
 ## Buckets
 
-S3-compatible storage (Tigris). Each bucket has its own access key limited to it. Any S3 SDK works:
+S3-compatible storage. Each bucket has its own access key limited to it. Any S3 SDK works:
 
 ```js
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
@@ -63,7 +65,7 @@ const s3 = new S3Client({});
 await s3.send(new PutObjectCommand({ Bucket: process.env.BUCKET_NAME, Key: "a.txt", Body: "hola" }));
 ```
 
-The AWS SDKs read `AWS_ENDPOINT_URL_S3` and `AWS_REGION` (`auto`) automatically. For browser uploads, generate presigned URLs in the app. `set_public_access(kind=bucket, public=true)` makes objects readable by URL (`public_url` in `get_connection`).
+The AWS SDKs read `AWS_ENDPOINT_URL_S3` and `AWS_REGION` (`auto`) automatically. For browser uploads, generate presigned URLs in the app. `set_public_access(kind="bucket", name, public=true, confirm="<bucket name>")` makes every object readable by anyone with its URL (`public_url` in `get_connection`): ask the user first.
 
 ## Email
 
@@ -89,16 +91,16 @@ const res = await fetch(`${process.env.EMAIL_API_URL}/v1/emails`, {
 const { emailId } = await res.json();
 ```
 
-- Body: `from` (an address at the key's domain), `to`, `subject`, `html` and/or `text`, optional `cc`, `bcc`, `replyTo`, `headers`, `attachments` (`[{ filename, content: base64 }]`). Unknown fields are rejected.
+- Body: `from` (an address at the key's domain), `to`, `subject`, `html` and/or `text`, optional `cc`, `bcc`, `replyTo`, `headers`, `attachments` (`[{ filename, content: base64 }]`). Unknown fields are rejected, and `headers` only takes `List-*` (such as `List-Unsubscribe`), `References`, `In-Reply-To` and `X-*`.
 - 1 to 50 recipients per email (to + cc + bcc). `POST /v1/emails/batch` takes an array of up to 100 emails. `GET /v1/emails/<emailId>` returns its delivery events.
-- 3,000 recipients per account per month (`429` beyond that; failed sends do not count).
-- Errors are `{ "error": { "code", "message" } }`: `401` bad key, `403` wrong sender domain, unverified or suspended domain, `400` invalid body.
+- 3,000 recipients per account per month, counting to + cc + bcc (`429` beyond that; rejected sends do not count).
+- Errors are `{ "error": { "code", "message" } }`: `401` bad key, `403` wrong sender domain, unverified or suspended domain, `400` invalid body or header, `429` monthly limit, `502` email service unavailable (retry later).
 - A domain is suspended automatically when, with 50+ emails in the last 7 days, bounces exceed 10 % or complaints 0.3 %; only Olimpia support reactivates it. Send only to addresses that signed up, and do not retry addresses that bounced.
-- `get_usage` reports the recipients sent this month. Never print `EMAIL_API_KEY`; it is a secret.
+- `get_usage` reports the recipients sent this month and the limit. Never print `EMAIL_API_KEY`; it is a secret.
 
 ## Public access from outside Olimpia
 
-By default Postgres and Redis only accept connections from apps on Olimpia. To connect from a laptop, a BI tool or another cloud, ask the user, then `set_public_access(kind, name, public=true)` and use `public_url` from `get_connection`:
+By default Postgres and Redis only accept connections from the user's apps on Olimpia. To connect from a laptop, a BI tool or another cloud, ask the user, then `set_public_access(kind, name, public=true, confirm="<name>")` (or `create_resource(..., public=true)` for a new one) and use `public_url` from `get_connection`:
 
 - Host `pg-<id>.db.olimpia.cc:5432` / `rd-<id>.db.olimpia.cc:6379`, TLS required with SNI.
 - Postgres: `sslmode=require`, libpq 14 or newer (`psql`, recent drivers).

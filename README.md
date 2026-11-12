@@ -10,10 +10,10 @@
 
 ---
 
-[Olimpia](https://olimpia.dev) is a cloud platform from Buenos Aires: app hosting, managed Postgres and Redis, and S3-compatible buckets, grouped in projects. This repository gives your agent two things:
+[Olimpia](https://olimpia.dev) is a cloud platform from Buenos Aires: app hosting, managed Postgres and Redis, S3-compatible buckets and transactional email, grouped in projects. This repository gives your agent two things:
 
-- **The Olimpia MCP server** (`https://api.olimpia.dev/mcp`): tools to create apps, upload and deploy code, deploy ready-made templates of open-source tools (n8n, cal.com, Infisical...), set env vars, create and connect databases, run SQL, add domains and read logs. It signs in with OAuth the first time.
-- **The `olimpia` skill**: the workflows and the details agents get wrong otherwise, like binding to `$PORT`, uploading a folder, connecting a database and fixing failed builds.
+- **The Olimpia MCP server** (`https://api.olimpia.dev/mcp`): tools to create apps, upload and deploy code, deploy ready-made templates of open-source tools (n8n, cal.com, Infisical...), set env vars, create and connect databases, run SQL, schedule backups, send email from your domain, add domains, read logs and analytics and estimate costs. It signs in with OAuth the first time.
+- **The `olimpia` skill**: the workflows and the details agents get wrong otherwise, like binding to `$PORT`, uploading a folder, connecting a database, staying within the resource limits and fixing failed builds.
 
 ## Install
 
@@ -63,14 +63,14 @@ skills/olimpia/
   SKILL.md             resource model, tools by intent, workflows and rules
   references/
     deploy.md          preparing apps per stack, monorepos, Dockerfiles, uploads, templates
-    data.md            Postgres, Redis and buckets: connecting, ORMs, SQL, backups, public access
-    troubleshooting.md failed deployments and apps that don't respond
+    data.md            Postgres, Redis, buckets and email: connecting, ORMs, SQL, backups, public access
+    troubleshooting.md failed deployments, apps that don't respond, logs, limits and tool errors
     api.md             personal tokens, REST API, GitHub Actions
 ```
 
 ## Safety
 
-The agent acts with your account's permissions. Delete tools require the exact resource name as confirmation, secrets are hidden unless explicitly requested, and you can revoke any connected agent from Account → Agents & tokens.
+The agent acts with your account's permissions. Deleting, writing to a database, exposing a database or bucket to the internet, sending backups to an external bucket and switching an app's source require the exact resource name as confirmation. Secrets are hidden unless explicitly requested, text written by apps and builds is marked as untrusted data, and plugin connections and personal tokens expire after 90 days. You can revoke any connected agent from Account → Agents & tokens.
 
 ## Links
 
